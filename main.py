@@ -3,36 +3,33 @@ import matplotlib.pyplot as plt
 from config import dc
 import th
 
-def analisis1(surface, array, name):
+def analisis1(surface, threshold):
     print ("iniciando analisis del proceso 1")
-    axis = []
-    points = []
-    for x in range(150,185,1):
-        surf = pygame.image.load(name)
-        s_array = pygame.PixelArray(surf)
-        ar = []
-        for y in range(surf.get_size()[0]):
-            ar.append(list(s_array[y]))
-        print("HOLA")
-        th.threshold(str(ar), surf.get_size()[0], surf.get_size()[1] , dc["th"], dc["margin"])
-        print("CHAU")
-        black = x
-        #black = proceso1(s_array,surface.get_size()[0],surface.get_size()[1] , dc)
-        axis.append(x)
-        points.append(black)
-        #pygame.image.save(surface,"data/output"+str(x)+".jpg")
+    array = pygame.PixelArray(surface)
 
-    plt.plot(axis , points)
-    #plt.show()
+    ar = []
+    for y in range(surface.get_size()[0]):
+        ar.append(list(array[y]))
 
+    ret = th.threshold(ar, len(ar), surface.get_size()[0], surface.get_size()[1] , threshold, dc["margin"])
 
+    for y in range(surface.get_size()[0]):
+        array[y] = ret[y]
 
 def main():
     img_name = "input.jpg"
     img = pygame.image.load(img_name)
-    img_array = pygame.PixelArray(img)
-    analisis1(img, img_array, img_name)
+    screen = pygame.display.set_mode(img.get_size())
+    pygame.display.set_caption("ProyectoX")
+    screen.blit(img, (0,0))
+    pygame.display.flip()
+    analisis1(screen, dc["th"])
+    while True:
 
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
 
 if __name__ == "__main__":
     main()
