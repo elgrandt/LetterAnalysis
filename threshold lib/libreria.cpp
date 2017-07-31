@@ -12,6 +12,16 @@ struct rgb{
     int r,g,b;
 };
 
+struct point{
+    int x, y, w, h;
+    point(int X, int Y){
+        x = X;
+        y = Y;
+        w = 0;
+        h = 0;
+    }
+};
+
 rgb num2rgb(int num){
     rgb a;
     a.r = num & 255;
@@ -33,7 +43,7 @@ void set_num(PyObject* obj, int x, int y, int value){
     PyList_SetItem( PyList_GetItem(obj,x), y , val);
 }
 
-static PyObject *funcion(PyObject *self, PyObject *args) {
+static PyObject *threshold(PyObject *self, PyObject *args) {
 
 	PyObject *txt;
 	int length;
@@ -80,8 +90,107 @@ static PyObject *funcion(PyObject *self, PyObject *args) {
     return txt;
 }
 
+bool is_black(PyObject *arr, int x, int y){
+    rgb act = num2rgb( get_num( arr, x, y ) );
+    return (act.r == 0 && act.g == 0 && act.b == 0);
+}
+
+bool is_inside(vector<point> vec, point p){
+    for (int x = 0; x < vec.size(); x++){
+        point act = vec[x];
+        if (act.x == p.x && act.y == p.y){
+            return true;
+        }
+    }
+    return false;
+}
+
+vector<point> analyse_letter(PyObject *arr, int sx, int sy, int w, int h){
+    bool finished = false;
+    vector<point> points;
+    int x = sx, y = sy;
+    while (!finished){
+        bool detected = false;
+        point cases[8] = {point(x,y+1), point(x,y-1), point(x+1,y-1), point(x+1,y), point(x+1,y+1), point(x-1,y-1), point(x-1,y), point(x-1,y+1)};
+        for (int n = 0; n < 8; n++){
+            if (is_black(arr,cases[n].x,cases[n].y)){
+                if (!is_inside(points,cases[n])){
+                    points.push_back(cases[n]);
+                    x = cases[n].x;
+                    y = cases[n].y;
+                    detected = true;
+                    break;
+                }
+            }
+        }
+        if (!detected){
+            finished = true;
+        }
+    }
+    return points;
+}
+
+static PyObject *get_letters(PyObject *self, PyObject *args) {
+	PyObject *arr;
+	int length;
+	int w,h;
+
+    if (!PyArg_ParseTuple(args, "Oiii", &arr, &length, &w, &h)) {
+		return NULL;
+	}
+
+    int separation = 20;
+    int y1 = 0, y2 = separation;
+    vector< vector<point> > letters;
+    while (y2 < h){
+	    bool detected = false;
+	    int maxy = y1;
+	    for (int x = 0; x < w; x++){
+	        if (is_black(arr,x,y1) || is_black(arr,x,y2)){
+	            if (!is_black(arr,x,y1) && is_black(arr,x,y2)){
+	                y1 = y2;
+	                y2 = y1 + separation;
+	            }
+	            for (int x2 = x-10; x2 < x+10; x2++){
+    	            if (is_black(arr,x2,y2)){
+    	                detected = true;
+    	                vector<point> a = analyse_letter(arr, x2, y1, w, h);
+    	                int maxx = x;
+    	                for (int n = 0; n < a.size(); n++){
+    	                    maxx = a[n].x > maxx ? a[n].x : maxx;
+    	                    maxy = a[n].y > maxy ? a[n].y : maxy;
+    	                }
+    	                x = maxx;
+    	                if (a.size() > 0){
+        	                letters.push_back(a);
+    	                    printf("x:%i, y:%i, s:%i\n",x2,y1,a.size());
+                        }
+    	            }
+                }
+           }
+	    }
+        y1 = maxy+100;
+        y2 = maxy+100+separation;
+	}
+
+    PyObject *LETTERS = PyList_New(0);
+    for (int x = 0; x < letters.size(); x++){
+        PyObject *LETTER = PyList_New(0);
+        for (int y = 0; y < letters[x].size(); y++){
+            PyObject *POINT = PyList_New(0);
+            PyList_Append(POINT, PyLong_FromLong(letters[x][y].x));
+            PyList_Append(POINT, PyLong_FromLong(letters[x][y].y));
+            PyList_Append(LETTER, POINT);
+        }
+        PyList_Append(LETTERS,LETTER);
+    }
+
+    return LETTERS;
+}
+
 static PyMethodDef module_functions[] = {
-	{ "threshold", (PyCFunction)funcion, METH_VARARGS, NULL },
+	{ "threshold", (PyCFunction)threshold, METH_VARARGS, NULL },
+	{ "get_letters", (PyCFunction)get_letters, METH_VARARGS, NULL },
 	{ NULL, NULL, 0, NULL }
 };
 
