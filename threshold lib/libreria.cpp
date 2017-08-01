@@ -90,7 +90,10 @@ static PyObject *threshold(PyObject *self, PyObject *args) {
     return txt;
 }
 
-bool is_black(PyObject *arr, int x, int y){
+bool is_black(PyObject *arr, int x, int y, int w, int h){
+    if (!(x > 0 && x < w && y > 0 && y < h)){
+        return false;
+    }
     rgb act = num2rgb( get_num( arr, x, y ) );
     return (act.r == 0 && act.g == 0 && act.b == 0);
 }
@@ -105,17 +108,17 @@ bool is_inside(vector<point> vec, point p){
     return false;
 }
 
-vector<point> analyse_letter(PyObject *arr, int sx, int sy, int w, int h){
+vector<point> analyse_letter(vector<point> points, PyObject *arr, int sx, int sy, int w, int h){
     bool finished = false;
-    vector<point> points;
     int x = sx, y = sy;
+    points.push_back(point(x,y));
     while (!finished){
         bool detected = false;
         point cases[8] = {point(x,y+1), point(x,y-1), point(x+1,y-1), point(x+1,y), point(x+1,y+1), point(x-1,y-1), point(x-1,y), point(x-1,y+1)};
         for (int n = 0; n < 8; n++){
-            if (is_black(arr,cases[n].x,cases[n].y)){
+            if (is_black(arr,cases[n].x,cases[n].y, w,h)){
                 if (!is_inside(points,cases[n])){
-                    points.push_back(cases[n]);
+                    points = analyse_letter(points, arr, cases[n].x, cases[n].y, w,h);
                     x = cases[n].x;
                     y = cases[n].y;
                     detected = true;
@@ -143,34 +146,42 @@ static PyObject *get_letters(PyObject *self, PyObject *args) {
     int y1 = 0, y2 = separation;
     vector< vector<point> > letters;
     while (y2 < h){
-	    bool detected = false;
 	    int maxy = y1;
 	    for (int x = 0; x < w; x++){
-	        if (is_black(arr,x,y1) || is_black(arr,x,y2)){
-	            if (!is_black(arr,x,y1) && is_black(arr,x,y2)){
+	        if (is_black(arr,x,y1,w,h) || is_black(arr,x,y2,w,h)){
+	            if (!is_black(arr,x,y1,w,h) && is_black(arr,x,y2,w,h)){
 	                y1 = y2;
 	                y2 = y1 + separation;
 	            }
-	            for (int x2 = x-10; x2 < x+10; x2++){
-    	            if (is_black(arr,x2,y2)){
-    	                detected = true;
-    	                vector<point> a = analyse_letter(arr, x2, y1, w, h);
+	            bool already_in = false;
+                for (int n = 0; n < letters.size(); n++){
+                    if (is_inside(letters[n], point(x,y1))){
+                        already_in = true;
+                    }
+                }
+                if (already_in){
+                    continue;
+                }
+	            for (int x2 = x-20; x2 < x+20; x2++){
+    	            if (is_black(arr,x2,y2,w,h)){
+    	                vector<point> a;
+    	                a = analyse_letter(a, arr, x, y1, w, h);
     	                int maxx = x;
     	                for (int n = 0; n < a.size(); n++){
     	                    maxx = a[n].x > maxx ? a[n].x : maxx;
     	                    maxy = a[n].y > maxy ? a[n].y : maxy;
     	                }
     	                x = maxx;
-    	                if (a.size() > 0){
+    	                if (a.size() > 1){
         	                letters.push_back(a);
-    	                    printf("x:%i, y:%i, s:%i\n",x2,y1,a.size());
+        	                break;
                         }
     	            }
                 }
            }
 	    }
-        y1 = maxy+100;
-        y2 = maxy+100+separation;
+        y1 = y1+1;
+        y2 = y1+1+separation;
 	}
 
     PyObject *LETTERS = PyList_New(0);
