@@ -109,6 +109,7 @@ bool is_inside(vector<point> vec, point p){
 }
 
 vector<point> analyse_letter(vector<point> points, PyObject *arr, int sx, int sy, int w, int h){
+    //printf("%i, %i\n",sx,sy);
     bool finished = false;
     int x = sx, y = sy;
     points.push_back(point(x,y));
@@ -142,17 +143,19 @@ static PyObject *get_letters(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 
-    int separation = 20;
+    int separation = 2;
     int y1 = 0, y2 = separation;
     vector< vector<point> > letters;
-    while (y2 < h){
+    while (y1 < h){
 	    int maxy = y1;
+        bool changed = false;
 	    for (int x = 0; x < w; x++){
-	        if (is_black(arr,x,y1,w,h) || is_black(arr,x,y2,w,h)){
-	            if (!is_black(arr,x,y1,w,h) && is_black(arr,x,y2,w,h)){
+	        if (is_black(arr,x,y1,w,h)/* || is_black(arr,x,y2,w,h)*/){
+	            /*if (!is_black(arr,x,y1,w,h) && is_black(arr,x,y2,w,h)){
 	                y1 = y2;
 	                y2 = y1 + separation;
-	            }
+	                changed = true;
+	            }*/
 	            bool already_in = false;
                 for (int n = 0; n < letters.size(); n++){
                     if (is_inside(letters[n], point(x,y1))){
@@ -160,10 +163,13 @@ static PyObject *get_letters(PyObject *self, PyObject *args) {
                     }
                 }
                 if (already_in){
+                    if (changed){
+                        y1 -= separation;
+                    }
                     continue;
                 }
-	            for (int x2 = x-20; x2 < x+20; x2++){
-    	            if (is_black(arr,x2,y2,w,h)){
+	            //for (int x2 = x-20; x2 < x+20; x2++){
+    	        //    if (is_black(arr,x2,y2,w,h)){
     	                vector<point> a;
     	                a = analyse_letter(a, arr, x, y1, w, h);
     	                int maxx = x;
@@ -174,11 +180,14 @@ static PyObject *get_letters(PyObject *self, PyObject *args) {
     	                x = maxx;
     	                if (a.size() > 1){
         	                letters.push_back(a);
-        	                break;
+        	                //break;
                         }
-    	            }
-                }
+    	        //    }
+                //}
            }
+	    }
+	    if (changed){
+	        y1 -= separation;
 	    }
         y1 = y1+1;
         y2 = y1+1+separation;

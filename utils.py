@@ -19,7 +19,7 @@ def num2rgb(num):
 	return num & 255 , (num >> 8) & 255 , (num >> 16) & 255
 def rgb2num(color):
 	r,g,b = color
-	return r + (g << 8) + (b << 16)
+	return (b + (g << 8) + (r << 16))
 def black(color):
 	r,g,b = num2rgb(color)
 	if (r == 0 and g == 0 and b == 0):

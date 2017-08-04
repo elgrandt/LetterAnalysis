@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from config import dc
 import th
 import utils
-from analizador import analizar_letra
+#from analizador import analizar_letra
 
 def analisis1(surface, threshold):
     print ("iniciando analisis 1")
@@ -33,12 +33,12 @@ def analisis2(surface):
     return ret
 
 def main():
-    img_name = "input6.png"
+    img_name = "input_test.png"
     img = pygame.image.load(img_name)
-    screen = pygame.display.set_mode(img.get_size(),pygame.RESIZABLE)
+    screen = pygame.display.set_mode((2*img.get_size()[0],2*img.get_size()[1]),pygame.RESIZABLE)
     pygame.display.set_caption("ProyectoX")
     screen.fill((255,255,255))
-    screen.blit(img, (0,0))
+    screen.blit(pygame.transform.smoothscale(img,(2*img.get_size()[0],2*img.get_size()[1])), (0,0))
     pygame.display.flip()
     analisis1(screen, dc["th"])
     cube = pygame.Surface((5,5))
@@ -47,8 +47,10 @@ def main():
     pygame.display.flip()
     letras = analisis2(screen)
     pygame.display.flip()
-    for l in letras:
-        analizar_letra(l)
+    #for l in letras:
+    #    analizar_letra(l)
+    f = open("output.py","w")
+    f.write("test = "+str(letras))
     while True:
         pygame.display.flip()
         for event in pygame.event.get():
