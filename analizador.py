@@ -54,12 +54,13 @@ def agregar_referencias(grupos, conectados):
     gr = []
     for x in conectados:
         for y in range(len(grupos)):
-            if x[0] == grupos[y].column and x[1] > grupos[y].start and x[1] < grupos[y].end:
+            if x[0] == grupos[y].column and x[1] >= grupos[y].start and x[1] <= grupos[y].end:
                 gr.append(grupos[y])
     for x in range(len(gr)):
         for y in range(len(gr)):
             if x != y:
-                gr[x].connected.append(gr[y])
+                if not gr[y] in gr[x].connected:
+                    gr[x].connected.append(gr[y])
     a = 1
 
 def generar_grafo(letra):
