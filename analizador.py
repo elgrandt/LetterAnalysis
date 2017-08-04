@@ -61,7 +61,6 @@ def agregar_referencias(grupos, conectados):
             if x != y:
                 if not gr[y] in gr[x].connected:
                     gr[x].connected.append(gr[y])
-    a = 1
 
 def generar_grafo(letra):
     maxx = 0
@@ -121,9 +120,16 @@ def analizar_letra(letra):
             maxy = n
     estandarizar(letra, minx, miny)
     emprolijar(letra, maxx, maxy)
-    print(letra)
     generar_grafo(letra)
     for n in range(len(letra)):
+        array[letra[n][0]*10-1][letra[n][1]*10-1] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10+1][letra[n][1]*10+1] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10+1][letra[n][1]*10-1] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10-1][letra[n][1]*10+1] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10-1][letra[n][1]*10] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10+1][letra[n][1]*10] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10][letra[n][1]*10-1] = utils.rgb2num((0,0,0))
+        array[letra[n][0]*10][letra[n][1]*10+1] = utils.rgb2num((0,0,0))
         array[letra[n][0]*10][letra[n][1]*10] = utils.rgb2num((0,0,0))
 
 if __name__ == "__main__":
