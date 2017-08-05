@@ -1,9 +1,10 @@
-import pygame,utils,output
+import pygame,utils,output,output2
+from graphviz import Graph
 
-surface = pygame.display.set_mode((800,600))
-surface.fill((255,255,255))
+#surface = pygame.display.set_mode((800,600))
+#surface.fill((255,255,255))
 global array
-array = pygame.PixelArray(surface)
+#array = pygame.PixelArray(surface)
 
 def estandarizar(letra, minx, miny):
     mx = letra[minx][0]
@@ -49,6 +50,8 @@ class grupo:
         self.start = elementos[0][1]
         self.end = elementos[len(elementos)-1][1]
         self.connected = []
+        self.name = ""
+        self.length = self.end - self.start + 1
 
 def agregar_referencias(grupos, conectados):
     gr = []
@@ -59,8 +62,17 @@ def agregar_referencias(grupos, conectados):
     for x in range(len(gr)):
         for y in range(len(gr)):
             if x != y:
-                if not gr[y] in gr[x].connected:
-                    gr[x].connected.append(gr[y])
+                already_in = False
+                for z in gr[x].connected:
+                    if z[0] == gr[y]:
+                        already_in = True
+                        break
+                if not already_in:
+                    gr[x].connected.append([gr[y],100.0/gr[x].length])
+                else:
+                    for z in range(len(gr[x].connected)):
+                        if gr[x].connected[z][0] == gr[y]:
+                            gr[x].connected[z][1] += 100/gr[x].length
 
 def generar_grafo(letra):
     maxx = 0
@@ -78,6 +90,7 @@ def generar_grafo(letra):
     for x in range(len(letra)):
         letar[letra[x][0]][letra[x][1]] = utils.rgb2num((0,0,0))
     grupos = []
+    name = 1
     for x in range(maxx):
         grupo_act = []
         for y in range(maxy):
@@ -85,11 +98,15 @@ def generar_grafo(letra):
                 grupo_act.append([x,y])
                 if y == maxy-1:
                     gr = grupo(grupo_act)
+                    gr.name = "Nodo "+str(name)
+                    name += 1
                     grupos.append(gr)
                     grupo_act = []
             else:
                 if grupo_act != []:
                     gr = grupo(grupo_act)
+                    gr.name = "Nodo "+str(name)
+                    name += 1
                     grupos.append(gr)
                     grupo_act = []
     for y in range(maxy):
@@ -97,16 +114,25 @@ def generar_grafo(letra):
         for x in range(maxx):
             if black(letar,x,y):
                 grupo_act.append([x,y])
-                if y == maxy-1:
+                if x == maxx-1:
                     agregar_referencias(grupos,grupo_act)
                     grupo_act = []
             else:
                 if grupo_act != []:
                     agregar_referencias(grupos,grupo_act)
                     grupo_act = []
-    a = 1
+    dot = Graph()
+    for x in grupos:
+        dot.node(x.name)
+        for y in x.connected:
+            if int(x.name[len(x.name)-1]) < int(y[0].name[len(y[0].name)-1]):
+                dot.edge(x.name,y[0].name,label=str(int(y[1])))
+    #dot.render("graph2.gv",view=False)
+    return grupos
 
-def analizar_letra(letra):
+def analizar_letra(letra,surf):
+    global array
+    array = pygame.PixelArray(surf)
     minx,miny = 0,0
     maxx,maxy = 0,0
     for n in range(len(letra)):
@@ -120,7 +146,7 @@ def analizar_letra(letra):
             maxy = n
     estandarizar(letra, minx, miny)
     emprolijar(letra, maxx, maxy)
-    generar_grafo(letra)
+    ret = generar_grafo(letra)
     for n in range(len(letra)):
         array[letra[n][0]*10-1][letra[n][1]*10-1] = utils.rgb2num((0,0,0))
         array[letra[n][0]*10+1][letra[n][1]*10+1] = utils.rgb2num((0,0,0))
@@ -131,9 +157,10 @@ def analizar_letra(letra):
         array[letra[n][0]*10][letra[n][1]*10-1] = utils.rgb2num((0,0,0))
         array[letra[n][0]*10][letra[n][1]*10+1] = utils.rgb2num((0,0,0))
         array[letra[n][0]*10][letra[n][1]*10] = utils.rgb2num((0,0,0))
+    return ret
 
 if __name__ == "__main__":
-    test = output.test[15]
+    test = output.test[15]#output2.test[0]
     analizar_letra(test)
     q = False
     while not q:

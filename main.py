@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from config import dc
 import th
 import utils
-#from analizador import analizar_letra
+from analizador import analizar_letra
 
 def analisis1(surface, threshold):
     print ("iniciando analisis 1")
@@ -47,8 +47,9 @@ def main():
     pygame.display.flip()
     letras = analisis2(screen)
     pygame.display.flip()
-    #for l in letras:
-    #    analizar_letra(l)
+    grafos = []
+    for l in letras:
+        grafos.append(analizar_letra(l,screen))
     f = open("output.py","w")
     f.write("test = "+str(letras))
     while True:
