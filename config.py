@@ -3,7 +3,7 @@ dc = dict()
 
 
 dc["th"] = 175    ## color threshold
-dc["margin"] = 5  ## white margin
+dc["margin"] = 0  ## white margin
 dc["ygap"] = 20   ## Y gap between pointers
 dc["xgap"] = 100   ## expected X gap 
 dc["min-size"] = 170
