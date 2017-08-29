@@ -6,6 +6,7 @@ import utils
 from analizador import analizar_letra
 import string,random,time
 import net_training
+import numpy as np
 
 def analisis1(surface, threshold):
     #print ("iniciando analisis 1")
@@ -86,31 +87,33 @@ def main():
                 return
 
 def train():
+    available_letters = string.ascii_uppercase
     end = False
     pygame.init()
-    font = pygame.font.Font(None,15)
     screen = pygame.display.set_mode((400,400))
     screen.fill((255,255,255))
-    examples = []
+    X = []
+    Y = []
     while not end:
-        size = 100
+        font = pygame.font.Font(None,random.randrange(10,30))
+        size = random.randrange(100)
         surf = pygame.Surface((400,400))
         surf.fill((255,255,255))
         lines = [""]
         i = 0
         txt = ""
         for x in range(size):
-            act = random.choice(string.ascii_uppercase)
+            act = random.choice(available_letters)
             txt += act
             lines[i] += act + " "
             render = font.render(lines[i]+"A",True,(0,0,0))
-            if render.get_size()[0] > surf.get_size()[0]-10:
+            if render.get_size()[0] > surf.get_size()[0]-20:
                 i += 1
                 lines.append("")
-        y = 10
+        y = 20
         for x in range(len(lines)):
             render = font.render(lines[x],True,(0,0,0))
-            surf.blit(render,(10,y))
+            surf.blit(render,(20,y))
             y += render.get_size()[1] + 4
         analisis1(surf,dc["th"])
         letters = analisis2(surf)
@@ -141,16 +144,22 @@ def train():
             array2 = pygame.PixelArray(s2)
             arr = []
             for n in range(len(array2)):
-                arr.append(list(array2[n]))
+                arr += list(array2[n])
             del array2
-            examples.append([arr,txt[a]])
+            X.append(arr)
+            tmp_y = [0] * (ord(max(available_letters)) - ord(min(available_letters)) + 1)
+            tmp_y[ord(txt[a]) - ord(min(available_letters))] = 1
+            Y.append(tmp_y)
 
-        #screen.blit(surf,(0,0))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.image.save(screen , "data/output.bmp")
-                return
+                end = True
+    #net_training.train_neural_net(np.array(X),np.array(Y))
+    file = open("example_data.py", "w+")
+    file.write("X = "+str(X)+"\n")
+    file.write("Y = "+str(Y))
 
 if __name__ == "__main__":
     train()
