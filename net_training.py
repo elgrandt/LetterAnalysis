@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.optimize import fmin_bfgs,fmin_cg
-from scipy.io import loadmat
 import example_data, example_data2
 
 def sigmoid(array):
@@ -22,17 +21,7 @@ def forwardPropagation(thetas, X, n_examples):
             A[x+1] = np.concatenate((np.ones((n_examples,1)),A[x+1]),1)
     return A,Z
 
-def Prediction(thetas, X, n_outputs):
-    A,Z = forwardPropagation(thetas, X, X.shape[0])
-    prediction = np.argmax(A[-1],1)
-    res = []
-    for x in prediction:
-        act = np.zeros(n_outputs)
-        act[x] = 1
-        res.append(act)
-    return np.array(res)
-
-def CalculateJ(theta,X,y,theta_sizes):
+def CalculateJ(theta,X,y,theta_sizes,regularization_constant):
     thetas = getRealThetas(theta,theta_sizes)
     del theta
     n_examples = X.shape[0]
@@ -46,11 +35,16 @@ def CalculateJ(theta,X,y,theta_sizes):
     #print(h)
     err = - y * np.log(h) - (1 - y) * np.log(h2)
     J = (1.0/n_examples) * sum(sum(err))
+    regularization = 0
+    for x in thetas:
+        regularization += sum( sum( np.power(x[:][1:],2) ) )
+    regularization *= (regularization_constant / (2*n_examples))
+    J += regularization
 
     del thetas,A,Z
     return J
 
-def Gradient(theta,X,y,theta_sizes):
+def Gradient(theta,X,y,theta_sizes, regularization_constant):
     thetas = getRealThetas(theta,theta_sizes)
     del theta
 
@@ -77,9 +71,11 @@ def Gradient(theta,X,y,theta_sizes):
 
     grad = (1.0/n_examples) * DELTAS
 
+    for x in range(len(thetas)):
+        grad[x][:][1:] += (regularization_constant/n_examples) * thetas[x][:][1:]
+
     del thetas,deltas,DELTAS,A,Z,h
     return extendThetas(grad)
-
 
 def extendThetas(thetas):
     theta = np.array([np.ravel(i) for i in thetas])
@@ -95,7 +91,17 @@ def getRealThetas(theta,theta_sizes):
     thetas = np.array(thetas)
     return thetas
 
-def train_neural_net(X,y):
+def Predict(thetas, X, n_outputs):
+    A,Z = forwardPropagation(thetas, X, X.shape[0])
+    prediction = np.argmax(A[-1],1)
+    res = []
+    for x in prediction:
+        act = np.zeros(n_outputs)
+        act[x] = 1
+        res.append(act)
+    return np.array(res)
+
+def TrainNeuralNet(X, y, regularization_constant = 1, disp_info = True, maxiter = 400, hidden_layers = []):
     """
     :param X:
     Type: NP matrix
@@ -103,13 +109,26 @@ def train_neural_net(X,y):
     :param y:
     Type: NP matrix
     Shape: (N of exampels, N of outputs)
+    :param regularization_constant:
+    Type: Float
+    Usually called "Lambda" to adjust regularization
+    :param disp_info
+    Type: Bool
+    Boolean to choose if the algorithm will display info in console or not
+    :param maxiter
+    Type: Int
+    Maxium number of iterations for minimization algorithm
+    :param hidden_layers
+    Type: List
+    List with the number of units for every hidden layer
+    For example:
+    A neural net with 2 hidden layers, the first with 20 units and the second one with 50, will have this parameter:
+    [20,50]
     :return:
     Optimal theta
     """
-    hidden_layers = [25]
 
     """ SOME USEFUL DATA """
-    n_examples = X.shape[0]
     n_features = X.shape[1]
     n_outputs = y.shape[1]
     n_hidden_layers = len(hidden_layers)
@@ -132,29 +151,28 @@ def train_neural_net(X,y):
 
     initial_theta = extendThetas(thetas)
     initial_theta = initial_theta.astype("float16")
+
+    """ SOME MEMORY MANAGEMENT """
     del thetas
-    #print("Memory ussage:",initial_theta.shape[0] * initial_theta.shape[0] * initial_theta.dtype.itemsize, "Data type:", initial_theta.dtype)
-    #print(CalculateJ(initial_theta,X,y,theta_sizes))
-    #Gradient(initial_theta,X,y,theta_sizes)
-    theta = fmin_cg(CalculateJ, initial_theta, fprime=Gradient, args=(X,y,theta_sizes), disp=True, maxiter=200)
+    if disp_info:
+        print("Memory usage:",initial_theta.shape[0] * initial_theta.shape[0] * initial_theta.dtype.itemsize / 1e6,"Megabyes")
+        print("Data type:", initial_theta.dtype)
+
+    """ MINIMIZING """
+    theta = fmin_cg(CalculateJ, initial_theta, fprime=Gradient, args=(X,y,theta_sizes,regularization_constant), disp=disp_info, maxiter=maxiter)
     result = getRealThetas(theta,theta_sizes)
 
     """ TESTING EFFICIENCY """
-    p = Prediction(result,X,n_outputs)
-    prec = np.equal(p,y)
-    p = 0
-    for x in np.ravel(prec):
-        if x:
-            p += 1
-    print(p/prec.size*100)
+    if disp_info:
+        p = Predict(result,X,n_outputs)
+        prec = np.equal(p,y)
+        p = 0
+        for x in np.ravel(prec):
+            if x:
+                p += 1
+        print("Examples precission:",str(p/prec.size*100)+"%")
+
     return result
 
 if __name__ == "__main__":
-    data = loadmat("ex4data1.mat")
-    y = []
-    for x in data["y"]:
-        act = np.zeros(10)
-        act[x-1] = 1
-        y.append(act)
-    train_neural_net(data["X"],np.array(y))
-    #train_neural_net(np.array(example_data.X,dtype=float),np.array(example_data.Y))
+    TrainNeuralNet(np.array(example_data.X,dtype=float),np.array(example_data.Y),hidden_layers=[50])
