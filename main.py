@@ -94,6 +94,7 @@ def train():
     screen.fill((255,255,255))
     X = []
     Y = []
+    model_size = 20
     while not end:
         font = pygame.font.Font(None,random.randrange(10,30))
         size = random.randrange(100)
@@ -131,14 +132,14 @@ def train():
                 array[y[0] - min(x,key=lambda a: a[0])[0]][y[1] - min(x,key=lambda a: a[1])[1]] = utils.rgb2num((0,0,0))
             new_size = [0,0]
             if s.get_size()[0] > s.get_size()[1]:
-                new_size[0] = 30
-                new_size[1] = (30/s.get_size()[0]) * s.get_size()[1]
+                new_size[0] = model_size
+                new_size[1] = (model_size/s.get_size()[0]) * s.get_size()[1]
             else:
-                new_size[1] = 30
-                new_size[0] = (30/s.get_size()[1]) * s.get_size()[0]
+                new_size[1] = model_size
+                new_size[0] = (model_size/s.get_size()[1]) * s.get_size()[0]
             del array
             s = pygame.transform.scale(s,(int(new_size[0]), int(new_size[1])))
-            s2 = pygame.Surface((30,30))
+            s2 = pygame.Surface((model_size,model_size))
             s2.fill((255,255,255))
             s2.blit(s,(0,0))
             array2 = pygame.PixelArray(s2)
@@ -157,7 +158,7 @@ def train():
                 pygame.image.save(screen , "data/output.bmp")
                 end = True
     #net_training.train_neural_net(np.array(X),np.array(Y))
-    file = open("example_data.py", "w+")
+    file = open("example_data2.py", "w+")
     file.write("X = "+str(X)+"\n")
     file.write("Y = "+str(Y))
 
